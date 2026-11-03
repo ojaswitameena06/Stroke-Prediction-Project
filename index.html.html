@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stroke Risk Screening Demo</title>
+<style>
+:root{--ink:#14323a;--paper:#f2f6f6;--panel:#fff;--line:#d3dede;--muted:#5b7076;--accent:#1f7a68;--hi:#ffa090;--lo:#78d9c2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 40px}
+h1{font:700 2rem/1.15 Georgia,"Times New Roman",serif;margin:0 0 6px}
+.lede{margin:0 0 24px;color:var(--muted);max-width:60ch}
+.grid{display:grid;grid-template-columns:5fr 6fr;gap:20px;align-items:start}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.in{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px}
+h2{font-size:1.1rem;margin:0 0 14px}
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.presets button{font:inherit;font-size:.9rem;padding:7px 12px;border:1px solid var(--ink);background:#fff;color:var(--ink);border-radius:6px;cursor:pointer}
+.presets button:hover{background:var(--ink);color:#fff}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:480px){.fields{grid-template-columns:1fr}}
+label{display:block;font-size:.88rem;font-weight:600;margin-bottom:4px}
+label small{font-weight:400;color:var(--muted)}
+input,select{width:100%;font:inherit;padding:8px 10px;border:1px solid #a9b9bd;border-radius:6px;background:#fff;color:var(--ink)}
+:focus-visible{outline:3px solid #f0b429;outline-offset:2px}
+.err{color:#a4161a;font-size:.88rem;min-height:1.3em;margin:12px 0 0}
+.out{background:var(--ink);color:#eaf3f2;border-radius:10px;padding:24px}
+.out h2{color:#eaf3f2}
+.score{font:700 4.6rem/1 Georgia,serif;margin:6px 0 4px;letter-spacing:-.02em}
+.verdict{font-weight:600;font-size:1.08rem;margin:0 0 18px}
+.flag{color:var(--hi)}.ok{color:var(--lo)}
+.track{position:relative;height:14px;background:rgba(255,255,255,.14);border-radius:7px;margin-top:6px}
+.fill{height:100%;border-radius:7px;width:0;transition:width .5s ease,background .3s}
+.tick{position:absolute;top:-6px;bottom:-6px;width:2px;background:#fff}
+.ticklab{position:absolute;top:22px;transform:translateX(-50%);font-size:.8rem;color:#bcd0d2;white-space:nowrap}
+.note{font-size:.84rem;color:#bcd0d2;margin:30px 0 0}
+hr{border:0;border-top:1px solid rgba(255,255,255,.18);margin:20px 0}
+h3{font-size:1rem;margin:0 0 2px}
+.sub{font-size:.84rem;color:#bcd0d2;margin:0 0 12px}
+.row{display:grid;grid-template-columns:8.5rem 1fr 3.8rem;gap:10px;align-items:center;margin:7px 0;font-size:.92rem}
+.bar{position:relative;height:10px;background:rgba(255,255,255,.1);border-radius:5px}
+.bar::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:rgba(255,255,255,.5)}
+.seg{position:absolute;top:0;bottom:0;border-radius:5px;transition:all .4s}
+.word{font-size:.84rem;color:#bcd0d2}
+.perf{font-size:.84rem;color:#bcd0d2;margin:0}
+.foot{margin-top:18px;font-size:.84rem;color:var(--muted)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Stroke risk screening demo</h1>
+  <p class="lede">Enter a patient's details on the left. The model trained for this project scores them instantly on the right.</p>
+  <div class="grid">
+    <section class="in" aria-labelledby="h-in">
+      <h2 id="h-in">Patient details</h2>
+      <div class="presets">
+        <button type="button" data-preset="young">Load a younger adult</button>
+        <button type="button" data-preset="older">Load an older adult with risk factors</button>
+      </div>
+      <div class="fields">
+        <div><label for="age">Age (years)</label><input id="age" type="number" min="0" max="120" step="1"></div>
+        <div><label for="gender">Gender</label><select id="gender"><option>Female</option><option>Male</option></select></div>
+        <div><label for="avg_glucose_level">Average glucose (mg/dL)</label><input id="avg_glucose_level" type="number" min="40" max="400" step="0.1"></div>
+        <div><label for="bmi">BMI <small>(leave blank if unknown)</small></label><input id="bmi" type="number" min="10" max="80" step="0.1"></div>
+        <div><label for="hypertension">Hypertension</label><select id="hypertension"><option value="0">No</option><option value="1">Yes</option></select></div>
+        <div><label for="heart_disease">Heart disease</label><select id="heart_disease"><option value="0">No</option><option value="1">Yes</option></select></div>
+        <div><label for="ever_married">Ever married</label><select id="ever_married"><option>Yes</option><option>No</option></select></div>
+        <div><label for="work_type">Work type</label><select id="work_type"><option value="Private">Private sector</option><option value="Self-employed">Self-employed</option><option value="Govt_job">Government job</option><option value="children">Child</option><option value="Never_worked">Never worked</option></select></div>
+        <div><label for="Residence_type">Residence</label><select id="Residence_type"><option>Urban</option><option>Rural</option></select></div>
+        <div><label for="smoking_status">Smoking status</label><select id="smoking_status"><option value="never smoked">Never smoked</option><option value="formerly smoked">Formerly smoked</option><option value="smokes">Smokes</option><option value="Unknown">Unknown</option></select></div>
+      </div>
+      <p class="err" id="err" role="alert"></p>
+    </section>
+
+    <section class="out" aria-labelledby="h-out" aria-live="polite">
+      <h2 id="h-out">Model output</h2>
+      <div class="score" id="score">&ndash;</div>
+      <p class="verdict" id="verdict"></p>
+      <div class="track" id="track"><div class="fill" id="fill"></div><div class="tick" id="tick"></div><span class="ticklab" id="ticklab"></span></div>
+      <p class="note">This is a risk score from a class-weighted model. It ranks patients by risk and is not a true percentage chance of stroke.</p>
+      <hr>
+      <h3>What moved the score</h3>
+      <p class="sub">Compared with an average patient in the training data</p>
+      <div id="contribs"></div>
+      <hr>
+      <p class="perf" id="perf"></p>
+    </section>
+  </div>
+  <p class="foot">Student project for Predictive Analytics. Not a medical device; do not use it to diagnose anyone.</p>
+</div>
+
+<script>
+const P = {"names":["num__age","num__avg_glucose_level","num__bmi","cat__gender_Female","cat__gender_Male","cat__ever_married_No","cat__ever_married_Yes","cat__work_type_Govt_job","cat__work_type_Never_worked","cat__work_type_Private","cat__work_type_Self-employed","cat__work_type_children","cat__Residence_type_Rural","cat__Residence_type_Urban","cat__smoking_status_Unknown","cat__smoking_status_formerly smoked","cat__smoking_status_never smoked","cat__smoking_status_smokes","bin__hypertension","bin__heart_disease"],"coef":[1.88382,0.21164,0.0601,-0.10272,-0.23639,-0.08176,-0.25734,-0.25014,-0.05754,-0.22421,-0.45286,0.64563,-0.25715,-0.08195,-0.12434,-0.02864,-0.35516,0.16903,0.62212,0.14143],"intercept":-0.41575,"median":{"age":45.0,"avg_glucose_level":91.89,"bmi":28.1},"mean":{"age":43.25937,"avg_glucose_level":105.89509,"bmi":28.85077},"scale":{"age":22.63947,"avg_glucose_level":44.67138,"bmi":7.73665},"featmean":[-0.0,0.0,-0.0,0.58649,0.41351,0.3401,0.6599,0.12919,0.00391,0.56863,0.16247,0.1358,0.49743,0.50257,0.30242,0.17494,0.37191,0.15072,0.09469,0.05677],"threshold":0.5,"test":{"recall":0.8,"precision":0.1347,"auc":0.8393,"n":1022,"pos":50}};
+// MODEL-START
+function groupOf(n){
+  const [kind, f] = n.split("__");
+  if (kind === "num" || kind === "bin") return f;
+  for (const g of ["gender","ever_married","work_type","Residence_type","smoking_status"]) if (f.startsWith(g + "_")) return g;
+}
+function encode(v){
+  return P.names.map(n => {
+    const [kind, f] = n.split("__");
+    if (kind === "num") { const raw = (v[f] == null || isNaN(v[f])) ? P.median[f] : v[f]; return (raw - P.mean[f]) / P.scale[f]; }
+    if (kind === "bin") return v[f];
+    return f === groupOf(n) + "_" + v[groupOf(n)] ? 1 : 0;
+  });
+}
+function predict(v){
+  const x = encode(v); let z = P.intercept; const contrib = {};
+  x.forEach((xi, i) => {
+    z += P.coef[i] * xi;
+    const g = groupOf(P.names[i]);
+    contrib[g] = (contrib[g] || 0) + P.coef[i] * (xi - P.featmean[i]);
+  });
+  return { p: 1 / (1 + Math.exp(-z)), contrib };
+}
+// MODEL-END
+
+if (typeof document !== "undefined") {
+const LABELS = {age:"Age",avg_glucose_level:"Average glucose",bmi:"BMI",hypertension:"Hypertension",heart_disease:"Heart disease",gender:"Gender",ever_married:"Marital status",work_type:"Work type",Residence_type:"Residence",smoking_status:"Smoking status"};
+const PRESETS = {
+  young:{age:29,gender:"Female",avg_glucose_level:88,bmi:24,hypertension:"0",heart_disease:"0",ever_married:"No",work_type:"Private",Residence_type:"Urban",smoking_status:"never smoked"},
+  older:{age:74,gender:"Male",avg_glucose_level:205,bmi:32,hypertension:"1",heart_disease:"1",ever_married:"Yes",work_type:"Private",Residence_type:"Urban",smoking_status:"formerly smoked"}
+};
+const $ = id => document.getElementById(id);
+const ids = Object.keys(PRESETS.young);
+const pct = x => Math.round(x * 100);
+
+function read(){
+  const v = {};
+  for (const id of ids) v[id] = $(id).value;
+  const num = (id, lo, hi, name, optional) => {
+    if (optional && v[id] === "") return null;
+    const n = parseFloat(v[id]);
+    if (isNaN(n) || n < lo || n > hi) throw new Error(name + " must be a number between " + lo + " and " + hi + ".");
+    return n;
+  };
+  v.age = num("age", 0, 120, "Age");
+  v.avg_glucose_level = num("avg_glucose_level", 40, 400, "Average glucose");
+  v.bmi = num("bmi", 10, 80, "BMI", true);
+  v.hypertension = +v.hypertension; v.heart_disease = +v.heart_disease;
+  return v;
+}
+
+function render(){
+  let v;
+  try { v = read(); $("err").textContent = ""; }
+  catch (e) { $("err").textContent = e.message; return; }
+  const r = predict(v), flagged = r.p >= P.threshold;
+  $("score").textContent = pct(r.p) + "%";
+  $("verdict").innerHTML = flagged ? '<span class="flag">Flagged for follow-up</span>' : '<span class="ok">Below the screening cutoff</span>';
+  $("fill").style.width = pct(r.p) + "%";
+  $("fill").style.background = flagged ? "var(--hi)" : "var(--lo)";
+  const rows = Object.entries(r.contrib).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 5);
+  const max = Math.max(...rows.map(x => Math.abs(x[1])), 0.01);
+  $("contribs").innerHTML = rows.map(([g, c]) => {
+    const w = Math.abs(c) / max * 50, up = c >= 0;
+    return '<div class="row"><span>' + LABELS[g] + '</span><div class="bar"><div class="seg" style="' +
+      (up ? "left:50%;" : "right:50%;") + "width:" + w + "%;background:" + (up ? "var(--hi)" : "var(--lo)") +
+      '"></div></div><span class="word">' + (up ? "raises" : "lowers") + "</span></div>";
+  }).join("");
+}
+
+$("tick").style.left = pct(P.threshold) + "%";
+$("ticklab").style.left = pct(P.threshold) + "%";
+$("ticklab").textContent = "cutoff " + pct(P.threshold) + "%";
+$("perf").textContent = "Model: Logistic Regression with class weights, trained on 4,087 patients. On " + P.test.n.toLocaleString() +
+  " patients it had never seen, it caught " + Math.round(P.test.recall * P.test.pos) + " of " + P.test.pos +
+  " strokes (recall " + pct(P.test.recall) + "%), with precision " + pct(P.test.precision) + "% and ROC-AUC " + P.test.auc.toFixed(2) + ".";
+
+function load(name){ const p = PRESETS[name]; for (const id of ids) $(id).value = p[id]; render(); }
+document.querySelectorAll("[data-preset]").forEach(b => b.addEventListener("click", () => load(b.dataset.preset)));
+ids.forEach(id => { $(id).addEventListener("input", render); $(id).addEventListener("change", render); });
+load("older");
+}
+</script>
+</body>
+</html>
